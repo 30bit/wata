@@ -1,5 +1,5 @@
 use crate::{ReadConfig, WriteConfig};
-use image::{codecs::webp::WebPEncoder, Rgb, RgbImage};
+use image::{codecs::webp::WebPEncoder, Rgba, RgbaImage};
 use std::{
     io::{Seek, Write},
     mem::size_of,
@@ -14,7 +14,7 @@ const ZIP_LARGE_FILE_SIZE: usize = 4 * usize::pow(10, 9) * size_of::<u8>();
 ///
 /// - if any serialization operation fails
 /// - if image is not divisible by configured `frame_height`
-pub fn write<W>(writer: W, frames: &RgbImage, config: &WriteConfig) -> anyhow::Result<()>
+pub fn write<W>(writer: W, frames: &RgbaImage, config: &WriteConfig) -> anyhow::Result<()>
 where
     W: Write + Seek,
 {
@@ -24,7 +24,7 @@ where
     let options = FileOptions::default().compression_method(DEFAULT_COMPRESSION_METHOD);
 
     let is_img_large =
-        (full_width as usize * full_height as usize * size_of::<Rgb<u8>>()) >= ZIP_LARGE_FILE_SIZE;
+        (full_width as usize * full_height as usize * size_of::<Rgba<u8>>()) >= ZIP_LARGE_FILE_SIZE;
     zip.start_file("frames.webp", options.large_file(is_img_large))?;
     frames.write_with_encoder(WebPEncoder::new_lossless(&mut zip))?;
 
