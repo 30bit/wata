@@ -16,3 +16,8 @@ bevy = { version = "0.13", default-features = false, features = [
     "bevy_render",
     "bevy_sprite",
 ] }
+
+[dev-dependencies]
+bevy      = { version = "0.13", features = ["multi-threaded"] }
+rand      = "0.8.5"
+bevy_rand = { version = "0.5", features = ["rand_chacha", "wyrand"] }

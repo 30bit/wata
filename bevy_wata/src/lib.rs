@@ -46,7 +46,8 @@ impl AssetLoader for WataLoader {
             let mut buf = Vec::new();
             reader.read_to_end(&mut buf).await?;
             let (config, img) = wata::read(io::Cursor::new(&buf))?;
-            let (frame_width, frame_height) = img.dimensions();
+            let (frame_width, full_height) = img.dimensions();
+            let frame_height = full_height / config.num_frames;
             let texture = load_context.add_labeled_asset(
                 "texture".into(),
                 Image::from_dynamic(
