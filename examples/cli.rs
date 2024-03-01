@@ -26,6 +26,8 @@ enum Commands {
         frame_width: u32,
         #[arg(long, short = 'l')]
         frame_height: u32,
+        #[arg(long, short = 's')]
+        is_srgb: Option<bool>,
         /// Output path
         #[arg(short, long)]
         output: Option<PathBuf>,
@@ -47,6 +49,7 @@ fn main() -> anyhow::Result<()> {
             input: input_path,
             frame_width,
             frame_height,
+            is_srgb,
             output: output_path,
         } => {
             let h264_buf = fs::read(&input_path)?;
@@ -62,7 +65,7 @@ fn main() -> anyhow::Result<()> {
                 &img,
                 &WriteConfig {
                     frame_height,
-                    is_srgb: None,
+                    is_srgb,
                 },
             )?;
         }

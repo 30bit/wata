@@ -9,7 +9,7 @@ use zip::read::ZipArchive;
 /// - if any deserialization operation fails
 /// - if read image is not divisible by read `num_frames`
 /// - if an image of an unexpected color type
-pub fn read<R>(reader: R) -> anyhow::Result<(ReadConfig, RgbImage)>
+pub fn read<R>(reader: R) -> anyhow::Result<(ReadConfig, RgbaImage)>
 where
     R: Read + Seek,
 {
@@ -30,8 +30,7 @@ where
         }
         let mut img_buf = vec![0; usize::try_from(img_decoder.total_bytes())?];
         img_decoder.read_image(&mut img_buf)?;
-       
-        RgbImage::from_vec(full_width, full_height, img_buf).ok_or_else(|| {
+        RgbaImage::from_vec(full_width, full_height, img_buf).ok_or_else(|| {
             anyhow!("invalid encoding: can't fit frames into {full_width}x{full_height}")
         })?
     };

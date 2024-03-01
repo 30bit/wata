@@ -4,7 +4,12 @@ use bevy::prelude::*;
 use bevy::{asset::LoadState, window::PrimaryWindow};
 use bevy_rand::prelude::*;
 use bevy_wata::{Wata, WataPlayer, WataPlugin};
-use rand::seq::SliceRandom as _;
+use rand::{seq::SliceRandom as _, Rng};
+use std::{f32::consts::PI, iter};
+
+const NUM_PLAYERS: u32 = 4100;
+
+const SCATTER_RADIUS: f32 = 410.0;
 
 const RANDOM_SEED: [u8; 8] = u64::to_le_bytes(914_391_251);
 
@@ -18,7 +23,13 @@ pub enum GameState {
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins,
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Wata Demo (v0.1.1)".to_string(),
+                    ..default()
+                }),
+                ..default()
+            }),
             EntropyPlugin::<WyRand>::with_seed(RANDOM_SEED),
             WataPlugin,
         ))
@@ -31,7 +42,7 @@ fn main() {
             OnEnter(GameState::Running),
             (
                 spawn_camera,
-                spawn_wata_players,
+                spawn_wata_players_grid,
                 set_window_cursor(CursorIcon::Default),
             ),
         )
@@ -41,7 +52,9 @@ fn main() {
 
 fn spawn_wata_load(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn_batch([
+        asset_server.load::<Wata>("butterfly.wata"),
         asset_server.load::<Wata>("eyes.wata"),
+        asset_server.load::<Wata>("neck.wata"),
         asset_server.load::<Wata>("tongue.wata"),
     ]);
 }
@@ -54,22 +67,11 @@ fn set_window_cursor(icon: CursorIcon) -> impl Fn(Query<&mut Window, With<Primar
     }
 }
 
-#[allow(clippy::cast_precision_loss)]
 fn spawn_camera(mut commands: Commands) {
-    commands.spawn((Camera2dBundle {
-        // projection: OrthographicProjection {
-        //     scaling_mode: camera::ScalingMode::FixedHorizontal(
-        //         (WATA_PLAYERS_GRID.x * WATA_SETTINGS.width) as f32,
-        //     ),
-        //     viewport_origin: Vec2::Y,
-        //     ..default()
-        // },
-        ..default()
-    },));
+    commands.spawn(Camera2dBundle::default());
 }
 
-#[allow(clippy::cast_precision_loss)]
-fn spawn_wata_players(
+fn spawn_wata_players_grid(
     mut commands: Commands,
     handles: Query<&Handle<Wata>>,
     assets: Res<Assets<Wata>>,
@@ -77,29 +79,56 @@ fn spawn_wata_players(
 ) {
     let handles: Vec<_> = handles.iter().collect();
 
-    let &handle = handles
-        .choose(&mut *rng)
-        .expect("at least one `Wata` asset");
-    let player = WataPlayer::new(handle.clone());
+    let batch = iter::repeat_with(|| {
+        let &handle = handles
+            .choose(&mut *rng)
+            .expect("at least one `Wata` asset");
+        wata_player_bundle(handle.clone(), &assets, &mut rng)
+    })
+    .take(NUM_PLAYERS as usize);
+    for bundle in batch {
+        commands.spawn(bundle);
+    }
+}
+
+fn wata_player_bundle(
+    handle: Handle<Wata>,
+    assets: &Assets<Wata>,
+    rng: &mut GlobalEntropy<WyRand>,
+) -> (WataPlayer, SpriteBundle) {
+    let texture = assets
+        .get(&handle)
+        .expect("every `Wata` loaded")
+        .texture
+        .clone();
+    let num_frames = assets.get(&handle).expect("every `Wata` loaded").num_frames;
+    let player = WataPlayer {
+        asset: handle,
+        frame_index: rng.gen_range(0..num_frames),
+    };
     let frame = player
         .get_frame(&assets)
         .expect("every `Wata` loaded")
         .expect("at least one frame");
-    let texture = assets
-        .get(handle)
-        .expect("every `Wata` loaded")
-        .texture
-        .clone();
     let sprite = SpriteBundle {
         sprite: Sprite {
             rect: Some(frame.as_rect()),
+            custom_size: Some(Vec2::new(64.0, 36.0)),
             ..default()
         },
         texture,
+        transform: {
+            let radius = SCATTER_RADIUS * f32::sqrt(rng.gen_range(0.0..1.0));
+            let angle = rng.gen_range(0.0..2.0 * PI);
+            Transform::from_xyz(
+                angle.cos() * radius,
+                angle.sin() * radius,
+                rng.gen_range(0.0..1.0),
+            )
+        },
         ..default()
     };
-
-    commands.spawn((player, sprite));
+    (player, sprite)
 }
 
 fn block_on_wata_load(
@@ -120,19 +149,21 @@ fn block_on_wata_load(
 }
 
 fn play_wata_frames(
-    mut q: Query<(&mut WataPlayer, &mut Sprite)>,
+    mut q: Query<(&mut WataPlayer, &mut Transform, &mut Sprite)>,
     wata: Res<Assets<Wata>>,
     state: Res<State<GameState>>,
+    mut rng: ResMut<GlobalEntropy<WyRand>>,
 ) {
     if *state == GameState::Loading {
         return;
     }
-    for (mut play, mut sprite) in &mut q {
+    for (mut play, mut transform, mut sprite) in &mut q {
         let frame = play
             .get_frame(&wata)
             .expect("every `Wata` loaded")
             .unwrap_or_else(|| {
                 play.frame_index = 0;
+                transform.translation.z = rng.gen_range(0.0..1.0);
                 play.get_frame(&wata)
                     .expect("every `Wata` loaded")
                     .expect("at least one frame")
