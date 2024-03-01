@@ -1,0 +1,47 @@
+[workspace]
+members = [".", "bevy_wata"]
+
+[workspace.package]
+version       = "0.1.0"
+description   = "spritesheet video format"
+authors       = ["Artur Helmanau <m30bit@gmail.com>"]
+license       = "MIT OR Apache-2.0"
+edition       = "2021"
+documentation = "https://docs.rs/wata/latest"
+repository    = "https://github.com/30bit/wata"
+
+[package]
+name                  = "wata"
+categories            = ["game-development", "multimedia::video"]
+keywords              = ["sprite", "video"]
+readme                = "README.md"
+authors.workspace     = true
+description.workspace = true
+version.workspace     = true
+license.workspace     = true
+edition.workspace     = true
+repository.workspace  = true
+
+[workspace.dependencies]
+wata   = { version = "=0.1.0", path = "." }
+anyhow = "1.0"
+log    = "0.4"
+
+[features]
+default = ["read", "write", "make"]
+read    = ["toml/parse", "zip/deflate", "zip/bzip2", "zip/zstd", "serde"]
+write   = ["toml/display", "zip/deflate", "serde"]
+make    = ["openh264"]
+
+[dependencies]
+anyhow.workspace = true
+log.workspace    = true
+zip              = { version = "0.6", default-features = false, optional = true }
+openh264         = { version = "0.5", optional = true }
+toml             = { version = "0.8", default-features = false, optional = true }
+image            = { version = "0.24", default-features = false, features = ["webp"] }
+serde            = { version = "1.0", optional = true, features = ["derive"] }
+
+[dev-dependencies]
+clap       = { version = "4.5.1", features = ["derive"] }
+env_logger = "0.11.2"

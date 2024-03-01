@@ -1,0 +1,18 @@
+[package]
+name                 = "bevy_wata"
+description          = "spritesheet video format"
+documentation        = "https://docs.rs/bevy_wata/latest"
+version.workspace    = true
+authors.workspace    = true
+license.workspace    = true
+edition.workspace    = true
+repository.workspace = true
+
+[dependencies]
+wata = { workspace = true, features = ["read"] }
+anyhow.workspace = true
+bevy = { version = "0.13", default-features = false, features = [
+    "bevy_asset",
+    "bevy_render",
+    "bevy_sprite",
+] }
