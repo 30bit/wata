@@ -19,13 +19,25 @@ struct Args {
 #[derive(Subcommand)]
 enum Commands {
     /// Make and write `wata` file
-    Make {
+    Make264 {
         /// Path to `h264`-encoded video
         input: PathBuf,
         #[arg(long, short = 'w')]
         frame_width: u32,
         #[arg(long, short = 'l')]
         frame_height: u32,
+        #[arg(long, short = 's')]
+        is_srgb: Option<bool>,
+        /// Output path
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Make and write `wata` file
+    MakeAnim {
+        /// Path to an image containing frames
+        input: PathBuf,
+        #[arg(long, short = 'n', default_value_t = 1)]
+        num_frames: u32,
         #[arg(long, short = 's')]
         is_srgb: Option<bool>,
         /// Output path
@@ -45,7 +57,7 @@ enum Commands {
 fn main() -> anyhow::Result<()> {
     env_logger::init();
     match Args::parse().command {
-        Commands::Make {
+        Commands::Make264 {
             input: input_path,
             frame_width,
             frame_height,
@@ -65,6 +77,28 @@ fn main() -> anyhow::Result<()> {
                 &img,
                 &WriteConfig {
                     frame_height,
+                    is_srgb,
+                },
+            )?;
+        }
+        Commands::MakeAnim {
+            input: input_path,
+            num_frames,
+            is_srgb,
+            output: output_path,
+        } => {
+            let img_buf = image::open(&input_path)?.to_rgba8();
+            let output_path = output_path.unwrap_or_else(|| {
+                let mut output_path = input_path;
+                output_path.set_extension("wata");
+                output_path
+            });
+            let output_file = File::create(output_path)?;
+            wata::write(
+                output_file,
+                &img_buf,
+                &WriteConfig {
+                    frame_height: img_buf.height() / num_frames,
                     is_srgb,
                 },
             )?;
