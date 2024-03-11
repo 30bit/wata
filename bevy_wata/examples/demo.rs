@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use bevy::{asset::LoadState, window::PrimaryWindow};
 use bevy_rand::prelude::*;
-use bevy_wata::{Wata, WataPlayer, WataPlugin};
+use bevy_wata::{Wata, WataPlayer, Plugin};
 use rand::{seq::SliceRandom as _, Rng};
 use std::{f32::consts::PI, iter};
 
@@ -31,7 +31,7 @@ fn main() {
                 ..default()
             }),
             EntropyPlugin::<WyRand>::with_seed(RANDOM_SEED),
-            WataPlugin,
+            Plugin,
         ))
         .init_state::<GameState>()
         .add_systems(

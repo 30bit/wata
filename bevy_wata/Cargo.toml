@@ -10,6 +10,7 @@ repository.workspace = true
 
 [dependencies]
 wata = { workspace = true, features = ["read"] }
+image.workspace = true
 anyhow.workspace = true
 bevy = { version = "0.13", default-features = false, features = [
     "bevy_asset",
