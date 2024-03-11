@@ -105,7 +105,7 @@ impl FlatWataPlayer {
     ) -> anyhow::Result<Option<(URect, Handle<Image>)>> {
         let asset = wata
             .get(&self.asset)
-            .ok_or_else(|| anyhow!("`Wata` asset not found"))?;
+            .ok_or_else(|| anyhow!("`FlatWata` asset not found"))?;
         let Some(texture) = asset.textures.get(self.frame_index as usize) else {
             return Ok(None);
         };
@@ -113,6 +113,30 @@ impl FlatWataPlayer {
             URect::from_corners(UVec2::ZERO, asset.frame_dimensions),
             texture.clone(),
         )))
+    }
+
+    /// # Errors
+    ///
+    /// - [`Err`] if [`FlatWata`] can't be found in [`Assets`]
+    pub fn advance(
+        &mut self,
+        n: u32,
+        looped: bool,
+        wata: &Assets<FlatWata>,
+    ) -> anyhow::Result<bool> {
+        let asset = wata
+            .get(&self.asset)
+            .ok_or_else(|| anyhow!("`FlatWata` asset not found"))?;
+        let mut new_frame_index = self.frame_index + n;
+        if new_frame_index as usize >= asset.textures.len() {
+            if looped {
+                new_frame_index -= asset.textures.len() as u32;
+            } else {
+                return Ok(false);
+            }
+        }
+        self.frame_index = new_frame_index;
+        Ok(true)
     }
 }
 
